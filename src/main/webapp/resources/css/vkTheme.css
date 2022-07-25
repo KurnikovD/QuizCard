@@ -1,0 +1,46 @@
+
+table{
+    width:70%;
+    margin:auto;
+    text-align:center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #f5f5f5;
+    font-family: Comic Sans MS;
+    border-collapse: collapse;
+
+}
+th {1
+    font-size: 13px;
+    font-weight: normal;
+    background: #333336;
+    border-bottom: 20px solid #222226;
+    padding: 10px;
+    font-size: 40px;
+
+}
+td {
+    border-bottom: 2px solid  #222226;
+    padding: 8px;
+}
+tr:hover td {
+    background: #333336;
+}
+th:first-child, th:last-child{
+    width:fit-content;
+}
+tr{
+    background: #444446
+}
+body{
+    background: #222226;
+    margin:0px;
+
+}
+.wrap{
+    word-break:break-all;
+}
+a{
+    color:#f5f5f5;
+    text-decoration: none;
+}

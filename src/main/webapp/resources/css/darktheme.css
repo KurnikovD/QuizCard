@@ -1,0 +1,38 @@
+table{
+    width:100%;
+    text-align:center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #D9D9D9;
+    font-family: Comic Sans MS;
+}
+th {1
+    font-size: 13px;
+    font-weight: normal;
+    background: #0D0D0D;
+    border-top: 4px solid #0D0D0D;
+    border-bottom: 1px solid #D9D9D9;
+    padding: 8px;
+    width:100%;
+    font-size: 40px;
+}
+td {
+    border-bottom: 1px solid #D9D9D9;
+    border-top: 1px solid transparent;
+    padding: 8px;
+}
+tr:hover td {
+    background: #3B4BDB;
+}
+th:first-child, th:last-child{
+    width:fit-content;
+}
+tr{
+    background: #262626;
+}
+tr:nth-child(even) {
+    background-color: #595959;
+}
+body{
+    background: #0D0D0D;
+}
