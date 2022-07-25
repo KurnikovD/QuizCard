@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.thymeleaf.org ">
+<head>
+<!--    <link rel="stylesheet" type="text/css" href="/resources/css/question.css">-->
+    <link rel="stylesheet" type="text/css" href="/resources/css/vkTheme.css">
+    <meta charset="UTF-8">
+    <title>Quiz Card</title>
+</head>
+<body>
+<div class="searchLine">
+    <form th:action="@{/}" method="post">
+        <div>
+            <input type="text" name="name" th:value="${name}">
+            <button type="submit" >Search</button>
+        </div>
+    </form>
+</div>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Rounds</th>
+    </tr>
+    <tr th:each="quiz : ${listOfQuiz}">
+
+        <td><span th:text="${quiz.id}">ID</span></td>
+        <td>
+            <a th:href="@{/start(quizId=${quiz.id})}">
+                <span th:text="${quiz.title}">Title</span>
+            </a>
+       </td>
+        <td><span th:text="${quiz.countOfRounds}">Rounds</span></td>
+    </tr>
+</table>
+<!--<script src="/resources/js/question.js"></script>-->
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.thymeleaf.org ">
+<head>
+  <link rel="stylesheet" type="text/css" href="/resources/css/question.css">
+  <meta charset="UTF-8">
+  <title>Question</title>
+</head>
+<body>
+<form th:object="${desk}"></form>
+<h1><span th:text="${question.question}">Question</span></h1>
+<br/>
+<!--<h2><span th:text="${question.hint}">Hint</span></h2>-->
+<div id="answerField" class="answer">
+  <h2><span th:text="${question.answer}">Answer</span></h2>
+</div>
+<button id="toDeskButton" class="answer" onclick="location.href='/desk';">To Desk</button>
+
+<button id="answerButton" onclick="showAnswer()">Show answer</button>
+</body>
+<script src="/resources/js/question.js"></script>
+</html>
