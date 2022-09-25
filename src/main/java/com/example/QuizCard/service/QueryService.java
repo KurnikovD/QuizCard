@@ -23,9 +23,10 @@ public class QueryService {
     @Autowired
     RoundRepository roundRepository;
     @Autowired
-    TopicRepository topicRepository;
-    @Autowired
     QuestionRepository questionRepository;
+
+    @Autowired
+    TopicRepository topicRepository;
 
     public Quiz getQuizById(Long quizId) {
         return quizRepository.findById(quizId).orElse(null);
@@ -60,5 +61,9 @@ public class QueryService {
 
     public List<Quiz> getQuizByName(String name) {
         return quizRepository.findByTitleContainsIgnoreCase(name);
+    }
+
+    public Quiz quizSave(Quiz quiz){
+        return quizRepository.save(quiz);
     }
 }

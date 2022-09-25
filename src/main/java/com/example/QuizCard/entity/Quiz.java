@@ -20,6 +20,7 @@ public class Quiz {
     private Integer countOfRoundsPass = 0;
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private Long id;
 

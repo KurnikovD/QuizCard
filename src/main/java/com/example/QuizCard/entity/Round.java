@@ -3,6 +3,7 @@ package com.example.QuizCard.entity;
 
 import com.example.QuizCard.entity.pk.RoundId;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.EmbeddedId;
@@ -14,6 +15,7 @@ import javax.persistence.Transient;
 @Getter
 @Setter
 @Table(name = "round")
+@NoArgsConstructor
 public class Round {
 
     @EmbeddedId
@@ -29,4 +31,7 @@ public class Round {
     @Transient
     private Integer countOfTopicsPass = 0;
 
+    public Round(RoundId roundId) {
+        this.id = roundId;
+    }
 }

@@ -24,6 +24,10 @@ public class Question {
 
     private Integer cost;
 
+    private String mediaType;
+
+    private String mediaPath;
+
     @Transient
     private Boolean passed = false;
 
