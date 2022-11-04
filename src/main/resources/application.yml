@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/quiz_card
+    username: quiz_card
+    password: D8rsIZP5MJjHnyv
+  jpa:
+    show-sql: false
+    generate-ddl: false
+    hibernate.ddl-auto: update
+  servlet.multipart:
+    max-file-size: 500MB
+    max-request-size: 500MB
+  minio:
+    url: http://localhost:9000
+    bucket: packs
+    access-key: minio
+    secret-key: minio123
+
+
+spring.jpa.properties.hibernate:
+  jdbc.lob.non_contextual_creation: true
+  globally_quoted_identifiers: true
+
+spring.main.allow-circular-references: true
+
+QuizCard:
+  path:
+    temp: "/packs/temp/"
+    media: "${spring.minio.url}/"
+  type:
+    image: "jpeg,jpg,png,gif"
+    audio: "mp3,wav"
+    video: "mp4,avi"
+server:
+  port: 8081
