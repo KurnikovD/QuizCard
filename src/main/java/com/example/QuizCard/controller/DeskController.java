@@ -1,24 +1,25 @@
 package com.example.QuizCard.controller;
 
-import com.example.QuizCard.entity.Question;
+import com.example.QuizCard.dto.QuestionDto;
 import com.example.QuizCard.service.QuizCardService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.annotation.SessionScope;
 
 
 @Controller
-@SessionScope
+//@SessionScope
 public class DeskController {
 
-    @Autowired
-    private QuizCardService quizCardService;
+    private final QuizCardService quizCardService;
+
+    public DeskController(QuizCardService quizCardService) {
+        this.quizCardService = quizCardService;
+    }
 
     @GetMapping("/start")
-    public String start(@RequestParam Long quizId) {
+    public String start(@RequestParam String quizId) {
         quizCardService.start(quizId);
         return "redirect:/round";
     }
@@ -26,11 +27,11 @@ public class DeskController {
     @GetMapping("/answer")
     public String answer(Model model) {
 
-        if (quizCardService.getQuiz() == null){
+        if (quizCardService.getQuizDto() == null) {
             return "redirect:/";
         }
 
-        Question question = quizCardService.getCurrentQuestion();
+        QuestionDto question = quizCardService.getCurrentQuestion();
         model.addAttribute("question", question);
         return "answer";
     }
@@ -42,9 +43,8 @@ public class DeskController {
     }
 
     @GetMapping("/nextRound")
-    public String nextRound(@RequestParam Integer roundNumber) {
-        quizCardService.setCurrentRound(roundNumber);
-        quizCardService.setDesk();
+    public String nextRound(@RequestParam String roundNumber) {
+        quizCardService.createDesk(roundNumber);
         return "redirect:/desk";
     }
 
@@ -60,11 +60,11 @@ public class DeskController {
     }
 
     @GetMapping("/question")
-    public String getQuestion(@RequestParam Integer topicNumber,
-                              @RequestParam Integer questionNumber,
+    public String getQuestion(@RequestParam("topicId") String topicId,
+                              @RequestParam("questionId") String questionId,
                               Model model) {
 
-        Question question = quizCardService.getQuestion(topicNumber, questionNumber);
+        QuestionDto question = quizCardService.getQuestion(topicId, questionId);
 
         model.addAttribute("question", question);
 
