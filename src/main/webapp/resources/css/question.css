@@ -1,3 +1,27 @@
 .answer{
     display:none;
 }
+
+body{
+    margin: auto;
+    text-align:center;
+    font-weight: bold;
+    color: #f5f5f5;
+    font-family: Comic Sans MS;
+}
+p{
+    font-size: xxx-large;
+    margin: 10px 10px 25px 10px;
+}
+img{
+    max-height: 600px;
+}
+video{
+    height: 600px;
+    width: 100%;
+}
+button{
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}

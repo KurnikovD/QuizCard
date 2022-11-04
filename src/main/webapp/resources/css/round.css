@@ -1,0 +1,10 @@
+table{
+    border-collapse: initial;
+    border-spacing: 35px;
+    font-size: 90px;
+    width:70%;
+}
+
+td{
+    padding: 15px;
+}

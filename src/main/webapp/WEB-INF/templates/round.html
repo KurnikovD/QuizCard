@@ -2,25 +2,21 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.thymeleaf.org ">
 <head>
+    <link rel="stylesheet" type="text/css" href="/resources/css/round.css">
+    <link rel="stylesheet" type="text/css" href="/resources/css/vkTheme.css">
     <meta charset="UTF-8">
     <title>Round</title>
 </head>
 <body>
 <table>
-    <tr>
-        <th>№</th>
-        <th>Title</th>
-    </tr>
-    <tr th:each="rounds : ${listOfRounds}" th:if="${rounds.passed} == false">
+    <tr th:each="rounds : ${listOfRounds}">
         <td>
-            <span th:text="${rounds.getId().roundNumber}">ID</span>
-        </td>
-        <td>
-            <a th:href="@{/nextRound(roundNumber=${rounds.getId().roundNumber})}">
+            <a th:href="@{/nextRound(roundNumber=${rounds.id})}">
                 <span th:text="${rounds.name}">Title</span>
             </a>
         </td>
     </tr>
 </table>
+<button id="toDeskButton" class="navButton" onclick="location.href='/';">main</button>
 </body>
 </html>

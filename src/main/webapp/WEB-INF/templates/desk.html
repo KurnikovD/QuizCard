@@ -2,6 +2,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.thymeleaf.org ">
 <head>
+    <link rel="stylesheet" type="text/css" href="/resources/css/desk.css">
+    <link rel="stylesheet" type="text/css" href="/resources/css/vkTheme.css">
     <meta charset="UTF-8">
     <title>Question Desk</title>
 </head>
@@ -9,18 +11,18 @@
 <form th:object="${desk}"></form>
     <table>
         <tr th:each="item : ${desk}">
-            <td th:if="${item.key.passed} == false">
-                <span th:text="${item.key.name}">Topic</span>
+            <td>
+                <span th:text="${item.name}">Topic</span>
             </td>
-            <td th:each="q : ${item.value}" th:if="${item.key.passed} == false">
+            <td th:each="q : ${item.questions}">
                 <div th:if="${q.passed} == false">
-                    <a th:href="@{/question(topicNumber=${item.key.getId().topicNumber},questionNumber=${q.getId().questionNumber})}">
+                    <a th:href="@{/question(topicId=${item.id},questionId=${q.id})}">
                         <span th:text="${q.cost}"></span>
                     </a>
                 </div>
             </td>
         </tr>
     </table>
-
+<button id="toDeskButton" class="navButton" onclick="location.href='/round';">round</button>
 </body>
 </html>
