@@ -1,94 +1,137 @@
 package com.example.QuizCard.service;
 
+import com.example.QuizCard.dto.QuestionDto;
+import com.example.QuizCard.dto.QuizDto;
+import com.example.QuizCard.dto.RoundDto;
+import com.example.QuizCard.dto.TopicDto;
 import com.example.QuizCard.entity.Question;
 import com.example.QuizCard.entity.Quiz;
 import com.example.QuizCard.entity.Round;
 import com.example.QuizCard.entity.Topic;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
+import com.example.QuizCard.repository.QuestionRepository;
+import com.example.QuizCard.repository.QuizRepository;
+import com.example.QuizCard.repository.RoundRepository;
+import com.example.QuizCard.repository.TopicRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.WebApplicationContext;
 
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 @Service
-@Scope(value = WebApplicationContext.SCOPE_SESSION,
-        proxyMode = ScopedProxyMode.TARGET_CLASS)
+//@Scope(value = WebApplicationContext.SCOPE_SESSION,
+//        proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class QuizCardService {
 
-    @Autowired
-    QueryService queryService;
-    private Map<Topic, List<Question>> desk;
-    private Quiz quiz;
-    private List<Round> rounds;
-    private Round currentRound;
-    private Question currentQuestion;
+    final QuizRepository quizRepository;
+    final RoundRepository roundRepository;
+    final TopicRepository topicRepository;
+    final QuestionRepository questionRepository;
 
-    public List<Quiz> getAllQuiz() {
-        return queryService.findAllQuiz();
+    @Value("${QuizCard.path.media}")
+    private String media;
+
+    private QuizDto quizDto;
+    private List<RoundDto> roundDtos;
+    private List<TopicDto> desk;
+    private QuestionDto currentQuestion;
+
+    public QuizCardService(QuizRepository quizRepository,
+                           RoundRepository roundRepository,
+                           TopicRepository topicRepository,
+                           QuestionRepository questionRepository) {
+        this.quizRepository = quizRepository;
+        this.roundRepository = roundRepository;
+        this.topicRepository = topicRepository;
+        this.questionRepository = questionRepository;
     }
 
-    public void start(Long quizId) {
-        quiz = queryService.getQuizById(quizId);
-        rounds = queryService.getListOfRounds(quizId);
+    public List<QuizDto> getAllQuiz() {
+        return quizRepository.findAll().stream().map(it -> new QuizDto(
+                        it.getId(),
+                        it.getTitle(),
+                        roundRepository.findByQuiz_Id(it.getId()).size()))
+                .toList();
     }
 
-    public void setCurrentRound(Integer roundNumber) {
-        currentRound = queryService.getRoundById(quiz.getId(), roundNumber);
+    public void start(String quizId) {
+        Quiz quizEntity = quizRepository.findById(quizId).orElse(null);
+        if (quizEntity == null) {
+            throw new IllegalArgumentException("Wrong id");
+        }
+
+        quizDto = new QuizDto(quizEntity.getId(), quizEntity.getTitle(), roundRepository.findByQuiz_Id(quizId).size());
+        roundDtos = roundRepository.findByQuiz_Id(quizId).stream().map(this::toRoundDto).toList();
     }
 
-    public void setDesk() {
-        desk = queryService.getDesk(quiz.getId(), currentRound.getId().getRoundNumber());
+    private RoundDto toRoundDto(Round round) {
+        return new RoundDto(round.getId(), round.getName(), round.getRoundNumber(), round.getPassed());
     }
 
+    private TopicDto toTopicDto(Topic topic) {
+        return new TopicDto(topic.getId(),
+                topic.getName(),
+                topic.getQuestions()
+                        .stream()
+                        .map(this::toQuestionDto)
+                        .sorted(Comparator.comparing(QuestionDto::getCost))
+                        .toList(),
+                topic.getPassed());
+    }
 
-    public List<Round> getRounds() {
-        return rounds;
+    private QuestionDto toQuestionDto(Question it) {
+        String mediaPath = switch (it.getMediaType()) {
+            case IMAGE, VIDEO, AUDIO -> media + quizDto.getId() + "/" + it.getId() + it.getMediaExtensionPath();
+            default -> "";
+        };
+        return new QuestionDto(it.getId(), it.getQuestion(), it.getAnswer(), it.getCost(), it.getMediaType(), mediaPath, it.getPassed());
+    }
+
+    public void createDesk(String roundId) {
+        desk = topicRepository.findByRound_Id(roundId).stream().map(this::toTopicDto).toList();
+    }
+
+    public List<RoundDto> getRounds() {
+        return roundDtos;
     }
 
     public boolean checkRoundsEnd() {
-        return currentRound.getCountOfTopics().equals(currentRound.getCountOfTopicsPass());
+        return desk.stream().allMatch(t -> t.getQuestions().stream().allMatch(QuestionDto::getPassed));
     }
 
-    public Map<Topic, List<Question>> getDesk() {
+    public List<TopicDto> getDesk() {
         return desk;
     }
 
-    public Question getQuestion(Integer topicNumber, Integer questionNumber) {
-        for (Topic topic : desk.keySet()) {
-            if (topic.getId().getTopicNumber().equals(topicNumber)) {
-                currentQuestion = desk.get(topic).get(questionNumber - 1);
-                currentQuestion.setPassed(true);
-                topic = topicsUpdate(topic);
-                desk.get(topic).set(questionNumber - 1, currentQuestion);
+    public QuestionDto getQuestion(String topicId, String questionId) {
 
-                break;
+        for (TopicDto topicDto : desk) {
+            if (topicDto.getId().equals(topicId)) {
+                for (int j = 0; j < topicDto.getQuestions().size(); j++) {
+                    if (topicDto.getQuestions().get(j).getId().equals(questionId)) {
+                        topicDto.getQuestions().get(j).setPassed(true);
+                        return currentQuestion = topicDto.getQuestions().get(j);
+                    }
+                }
             }
         }
 
-        return currentQuestion;
+        throw new IllegalArgumentException("Cannot find question");
+
     }
 
-    private Topic topicsUpdate(Topic topic) {
-        topic.setCountOfQuestionPass(topic.getCountOfQuestionPass() + 1);
-        if (topic.getCountOfQuestionPass().equals(topic.getCountOfQuestion())) {
-            topic.setPassed(true);
-            currentRound.setCountOfTopicsPass(currentRound.getCountOfTopicsPass() + 1);
+    public QuestionDto getCurrentQuestion() {
+        if (currentQuestion == null) {
+            throw new IllegalArgumentException("No eny question yet");
         }
-        return topic;
-    }
-
-    public Question getCurrentQuestion() {
         return currentQuestion;
     }
 
-    public Quiz getQuiz() {
-        return quiz;
+    public QuizDto getQuizDto() {
+        return quizDto;
     }
 
     public List<Quiz> getQuizByName(String name) {
-        return queryService.getQuizByName(name);
+        return quizRepository.findByTitleContainsIgnoreCase(name);
     }
 }
