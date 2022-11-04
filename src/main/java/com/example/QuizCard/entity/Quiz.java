@@ -1,10 +1,12 @@
 package com.example.QuizCard.entity;
 
-
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -14,15 +16,12 @@ public class Quiz {
 
     private String title;
 
-    private Integer countOfRounds;
-
-    @Transient
-    private Integer countOfRoundsPass = 0;
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", nullable = false)
-    private Long id;
+    @GeneratedValue(generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "uuid2")
+    private String id;
 
+    @OneToMany(mappedBy = "quiz", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<Round> rounds = new ArrayList<>();
 
 }

@@ -1,7 +1,6 @@
 package com.example.QuizCard.entity;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -12,9 +11,8 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@Table(name = "round")
-@NoArgsConstructor
-public class Round {
+@Table(name = "topic")
+public class Topic {
 
     @Id
     @GeneratedValue(generator = "uuid")
@@ -23,19 +21,19 @@ public class Round {
 
     private String name;
 
-    private Integer roundNumber;
+    private Integer topicNumber;
+
+    @Transient
+    private Integer countOfQuestionPass = 0;
 
     @Transient
     private Boolean passed = false;
 
-    @Transient
-    private Integer countOfTopicsPass = 0;
+    @OneToMany(mappedBy = "topic", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<Question> questions = new ArrayList<>();
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "quiz_id")
-    private Quiz quiz;
-
-    @OneToMany(mappedBy = "round", orphanRemoval = true, cascade = CascadeType.ALL)
-    private List<Topic> topics = new ArrayList<>();
+    @JoinColumn(name = "round_id")
+    private Round round;
 
 }

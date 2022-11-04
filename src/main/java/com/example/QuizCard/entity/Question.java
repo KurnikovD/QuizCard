@@ -1,13 +1,10 @@
 package com.example.QuizCard.entity;
 
-import com.example.QuizCard.entity.pk.QuestionId;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 @Entity
 @Getter
@@ -15,8 +12,10 @@ import javax.persistence.Transient;
 @Table(name = "question")
 public class Question {
 
-    @EmbeddedId
-    private QuestionId id;
+    @Id
+    @GeneratedValue(generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "uuid2")
+    private String id;
 
     private String question;
 
@@ -24,12 +23,16 @@ public class Question {
 
     private Integer cost;
 
-    private String mediaType;
+    @Enumerated(EnumType.STRING)
+    private MediaType mediaType;
 
-    private String mediaPath;
+    private String mediaExtensionPath;
 
     @Transient
     private Boolean passed = false;
 
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "topic_id")
+    private Topic topic;
 
 }
