@@ -1,0 +1,41 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres:alpine
+    restart: always
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES=quiz_cart,quiz_card_auto_test # creates a database+user with the same name
+      - POSTGRES_USER=quiz_card # root user is the same everywhere, but it's ignored in apps
+      - POSTGRES_PASSWORD=D8rsIZP5MJjHnyv # same in each database
+    volumes:
+      - ./deployment/local-pg-init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+
+  nginx:
+    image: nginx:stable
+    restart: always
+    volumes:
+      - ./deployment/local-nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./local-logs/nginx:/var/log/nginx
+    ports:
+      - 81:80
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: [ nginx-debug, '-g', 'daemon off;' ] # remove this line to not see nginx spam
+
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: always
+    volumes:
+      - ./deployment/local-minio-data:/data
+    ports:
+      - "9090:9090"
+      - "9000:9000"
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    command: server /data --console-address ":9090"
+
