@@ -8,15 +8,17 @@
     <title>Round</title>
 </head>
 <body>
-<table>
-    <tr th:each="rounds : ${listOfRounds}">
+<table id="round-table">
+    <tr th:each="round : ${listOfRounds}">
         <td>
-            <a th:href="@{/nextRound(roundNumber=${rounds.id})}">
-                <span th:text="${rounds.name}">Title</span>
+            <a th:href="@{/nextRound(roundId=${round.id})}">
+                <span th:text="${round.name}">Title</span>
             </a>
         </td>
     </tr>
 </table>
-<button id="toDeskButton" class="navButton" onclick="location.href='/';">main</button>
+<div id="button">
+    <a th:href="@{/}">main</a>
+</div>
 </body>
 </html>

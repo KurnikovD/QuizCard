@@ -2,12 +2,35 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.thymeleaf.org ">
 <head>
-  <link rel="stylesheet" type="text/css" href="/resources/css/answer.css">
-  <link rel="stylesheet" type="text/css" href="/resources/css/vkTheme.css">
-  <meta charset="UTF-8">
-  <title>Answer</title>
+    <link rel="stylesheet" type="text/css" href="/resources/css/vkTheme.css">
+    <link rel="stylesheet" type="text/css" href="/resources/css/question.css">
+    <meta charset="UTF-8">
+    <title>Answer</title>
 </head>
 <body>
-<p><span th:text="${question.answer}">Answer</span></p>
+<div>
+    <p><span th:text="${answer.answer}">Answer</span></p>
+
+    <div th:if="${answer.mediaType} == 'IMAGE'">
+        <img th:src="${answer.mediaPath}" alt="Image">
+    </div>
+
+    <div th:if="${answer.mediaType} == 'VIDEO'">
+        <video controls autoplay>
+            <source th:src="${answer.mediaPath}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div th:if="${answer.mediaType} == 'AUDIO'">
+        <audio controls autoplay>
+            <source th:src="${answer.mediaPath}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+</div>
+<div id="button">
+    <a th:href="@{/desk}">desk</a>
+</div>
 </body>
 </html>

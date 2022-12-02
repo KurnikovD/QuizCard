@@ -5,6 +5,7 @@ table{
 }
 td{
     padding: 5px;
+    border-bottom: 2px solid  #222226;
 }
 input{
     font-size: 40px;

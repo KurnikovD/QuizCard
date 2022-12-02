@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="/resources/css/vkTheme.css">
+    <link rel="stylesheet" type="text/css" href="/resources/css/cat.css">
+    <meta charset="UTF-8">
+    <title>Cat</title>
+</head>
+<body>
+<p>КОТ В МЕШКЕ</p>
+<img th:src="${cat.mediaPath}" alt="Image">
+<div id="button">
+    <a th:href="@{/question(questionId=${cat.id})}">question</a>
+</div>
+</body>
+</html>
