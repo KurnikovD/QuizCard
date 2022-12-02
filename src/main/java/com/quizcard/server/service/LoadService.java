@@ -1,16 +1,16 @@
 package com.quizcard.server.service;
 
-import com.example.QuizCard.entity.*;
-import com.quizcard.server.repository.QuestionRepository;
-import com.quizcard.server.repository.QuizRepository;
-import com.quizcard.server.repository.RoundRepository;
-import com.quizcard.server.repository.TopicRepository;
 import com.jlefebure.spring.boot.minio.MinioConfigurationProperties;
 import com.jlefebure.spring.boot.minio.MinioException;
 import com.jlefebure.spring.boot.minio.MinioService;
 import com.quizcard.server.entity.*;
+import com.quizcard.server.repository.QuestionRepository;
+import com.quizcard.server.repository.QuizRepository;
+import com.quizcard.server.repository.RoundRepository;
+import com.quizcard.server.repository.TopicRepository;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
+import io.minio.RemoveBucketArgs;
 import io.minio.errors.*;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -65,6 +65,8 @@ public class LoadService {
     private MinioService minioService;
     private String exceptionLog = "";
 
+    private List<Path> files = new ArrayList<>();
+
     private Quiz quiz;
     private String dataFileName;
     private String dirTempPath;
@@ -105,7 +107,7 @@ public class LoadService {
             zipInputStream.close();
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -132,7 +134,7 @@ public class LoadService {
         } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
                  InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
                  XmlParserException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
 
 
@@ -182,7 +184,6 @@ public class LoadService {
             quiz = quizRepository.save(quiz);
             buildMinio();
 
-            List<Round> rounds = new ArrayList<>();
             int roundNumber = 0;
 
             for (Sheet sheet : workbook) {
@@ -209,7 +210,34 @@ public class LoadService {
         }
 
         if (!exceptionLog.isEmpty()) {
+            clearerFiles();
             throw new IllegalArgumentException(exceptionLog);
+        }
+
+    }
+
+    private void clearerFiles() {
+        files.forEach(path -> {
+            try {
+                minioService.remove(path);
+            } catch (MinioException e) {
+                e.printStackTrace();
+            }
+        });
+
+        MinioClient minioClient = new MinioClient.Builder()
+                .endpoint(minioUrl)
+                .credentials(minioAccessKey, minioSecretKey)
+                .build();
+        try {
+            minioClient.removeBucket(
+                    RemoveBucketArgs.builder()
+                            .bucket(quiz.getId())
+                            .build());
+        }catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
+                InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
+                XmlParserException e){
+            e.printStackTrace();
         }
 
     }
@@ -217,7 +245,7 @@ public class LoadService {
     private boolean isTopic(Row row) {
         int count = 0;
         for (Cell cell : row) {
-            if (!cell.toString().isEmpty()) {
+            if (!cellIsEmpty(cell)) {
                 count++;
             }
             if (count > 1) {
@@ -228,33 +256,27 @@ public class LoadService {
     }
 
     private Round saveRound(Sheet sheet, int roundNumber) {
-        Round round = new Round(quiz);
-        round.setName(sheet.getSheetName());
-        round.setRoundNumber(roundNumber);
-        return roundRepository.save(round);
+        return roundRepository.save(new Round(quiz, sheet.getSheetName(), roundNumber));
     }
 
     private Topic saveTopic(Row row, Round currentRound, int topicNumber) {
-        Topic topic = new Topic(currentRound);
-        topic.setTopicNumber(topicNumber);
-        topic.setName(row.getCell(0).getStringCellValue());
-
-        return topicRepository.save(topic);
+        return topicRepository.save(new Topic(currentRound,
+                topicNumber,
+                row.getCell(0).getStringCellValue()));
     }
 
     private void saveQuestion(Topic currentTopic, Row row) {
-        if (currentTopic == null) {
-            exceptionLog += "Topic is null - " + row.getRowNum() + "\n";
-        }
         Question question = new Question(currentTopic);
         question = questionRepository.save(question);
 
         // cost
-        if (row.getCell(0) == null) {
-            exceptionLog += "Cost is not set - " + row.getRowNum() + "\n";
+        if (cellIsEmpty(row.getCell(0))) {
+            exceptionLog += "Cost is not set - " + row.getRowNum() + ":0\n";
         }
         question.setCost((int) Double.parseDouble(row.getCell(0).toString()));
-        if (row.getCell(1) != null) {
+
+        // cat
+        if (!cellIsEmpty(row.getCell(1))) {
             question.setCat(true);
             if (row.getCell(1).getStringCellValue().equals("cat")) {
                 question.setCatMediaPath("cat.jpg");
@@ -267,13 +289,13 @@ public class LoadService {
 
         // question
         int questionCellNumber = 2;
-        if (row.getCell(2) != null) {
+        if (!cellIsEmpty(row.getCell(2))) {
             question.setQuestion(row.getCell(2).toString());
         } else {
             questionCellNumber--;
         }
 
-        if (row.getCell(3) != null) {
+        if (!cellIsEmpty(row.getCell(3))) {
             String path = row.getCell(3).getStringCellValue();
             saveMedia(question.getId() + "-question", path);
             question.setQuestionMediaType(getMediaType(path));
@@ -283,18 +305,18 @@ public class LoadService {
         }
 
         if (questionCellNumber == 0) {
-            exceptionLog += "Question is not set - " + row.getRowNum() + "\n";
+            exceptionLog += "Question is not set - " + row.getRowNum() + ":2,3\n";
         }
 
         // answer
         int answerCellNumber = 2;
-        if (row.getCell(4) != null) {
+        if (!cellIsEmpty(row.getCell(4))) {
             question.setAnswer(row.getCell(4).toString());
         } else {
             answerCellNumber--;
         }
 
-        if (row.getCell(5) != null) {
+        if (!cellIsEmpty(row.getCell(5))) {
             String path = row.getCell(5).getStringCellValue();
             saveMedia(question.getId() + "-answer", path);
             question.setAnswerMediaType(getMediaType(path));
@@ -303,10 +325,14 @@ public class LoadService {
             answerCellNumber--;
         }
         if (answerCellNumber == 0) {
-            exceptionLog += "Answer is not set - " + row.getRowNum() + "\n";
+            exceptionLog += "Answer is not set - " + row.getRowNum() + "4,5\n";
         }
 
         questionRepository.save(question);
+    }
+
+    private boolean cellIsEmpty(Cell cell) {
+        return cell == null || cell.toString().isEmpty();
     }
 
     private void saveMedia(String id, String mediaPath) {
@@ -314,6 +340,7 @@ public class LoadService {
         Path to = Paths.get(getPathToMedia(id, mediaPath));
         try {
             minioService.upload(to, from);
+            files.add(to);
         } catch (MinioException e) {
             exceptionLog += "File not found:" + e.getStackTrace()[0].getLineNumber() + ":" + mediaPath + "\n";
         }
@@ -331,9 +358,11 @@ public class LoadService {
 
         if (isImage(fileExtension)) {
             return MediaType.IMAGE;
-        } else if (isVideo(fileExtension)) {
+        }
+        if (isVideo(fileExtension)) {
             return MediaType.VIDEO;
-        } else if (isAudio(fileExtension)) {
+        }
+        if (isAudio(fileExtension)) {
             return MediaType.AUDIO;
         }
         return MediaType.NONE;

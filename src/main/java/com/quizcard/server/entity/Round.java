@@ -1,5 +1,6 @@
 package com.quizcard.server.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -42,4 +43,9 @@ public class Round {
         this.quiz = quiz;
     }
 
+    public Round(Quiz quiz, String sheetName, int roundNumber) {
+        this.quiz = quiz;
+        this.name = sheetName;
+        this.roundNumber = roundNumber;
+    }
 }

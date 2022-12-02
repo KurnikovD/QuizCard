@@ -42,4 +42,9 @@ public class Topic {
         this.round = round;
     }
 
+    public Topic(Round currentRound, int topicNumber, String stringCellValue) {
+        this.round = currentRound;
+        this.topicNumber = topicNumber;
+        this.name = stringCellValue;
+    }
 }
