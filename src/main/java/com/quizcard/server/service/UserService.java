@@ -1,12 +1,20 @@
 package com.quizcard.server.service;
 
+import com.quizcard.server.dto.QuizDto;
 import com.quizcard.server.dto.UserDto;
-import org.springframework.stereotype.Service;
+import com.quizcard.server.entity.User;
 
-@Service
-public class UserService {
+import java.util.List;
 
-    public void signUp(UserDto userDto) {
+public interface UserService {
 
-    }
+        void signUp(UserDto userDto);
+
+        boolean signIn(UserDto userDto);
+
+        List<QuizDto> getAllUserQuiz(User user);
+
+        void deleteQuiz(User user, String quizId);
+
+        void editQuiz(User user, String quizId);
 }

@@ -11,4 +11,5 @@ public class QuizDto {
     private String id;
     private String title;
     private Integer countOfRounds;
+    private boolean isPublic;
 }

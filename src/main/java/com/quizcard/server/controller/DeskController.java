@@ -2,6 +2,8 @@ package com.quizcard.server.controller;
 
 import com.quizcard.server.dto.QuestionDto;
 import com.quizcard.server.service.QuizCardService;
+import com.quizcard.server.service.impl.QuizCardServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,14 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @Controller
+@RequiredArgsConstructor
 //@SessionScope
 public class DeskController {
 
     private final QuizCardService quizCardService;
-
-    public DeskController(QuizCardService quizCardService) {
-        this.quizCardService = quizCardService;
-    }
 
     @GetMapping("/start")
     public String start(@RequestParam String quizId) {

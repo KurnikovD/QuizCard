@@ -9,7 +9,6 @@ import lombok.*;
 @Data
 @Builder
 public class UserDto {
-    private String telegramId;
     private String username;
     private String password;
 }
