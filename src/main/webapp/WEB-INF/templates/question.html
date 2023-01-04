@@ -8,18 +8,20 @@
     <title>Question</title>
 </head>
 <body>
-<form th:object="${desk}"></form>
 <div>
     <p><span th:text="${question.question}">Question</span></p>
+
     <div th:if="${question.mediaType} == 'IMAGE'">
         <img th:src="${question.mediaPath}" alt="Image">
     </div>
+
     <div th:if="${question.mediaType} == 'VIDEO'">
         <video controls autoplay>
             <source th:src="${question.mediaPath}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
     </div>
+
     <div th:if="${question.mediaType} == 'AUDIO'">
         <audio controls autoplay>
             <source th:src="${question.mediaPath}" type="audio/mpeg">
@@ -27,15 +29,8 @@
         </audio>
     </div>
 </div>
-
-<br/>
-<!--<h2><span th:text="${question.hint}">Hint</span></h2>-->
-<div id="answerField" class="answer">
-    <p><span th:text="${question.answer}">answer</span></p>
+<div id="button">
+    <a th:href="@{/answer(questionId=${question.id})}">answer</a>
 </div>
-<button id="toDeskButton" class="navButton" onclick="location.href='/desk';">desk</button>
-
-<button id="answerButton" onclick="showAnswer()">Show answer</button>
 </body>
-<script src="/resources/js/question.js"></script>
 </html>

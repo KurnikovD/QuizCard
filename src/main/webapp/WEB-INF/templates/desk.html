@@ -8,21 +8,25 @@
     <title>Question Desk</title>
 </head>
 <body>
-<form th:object="${desk}"></form>
-    <table>
-        <tr th:each="item : ${desk}">
-            <td>
-                <span th:text="${item.name}">Topic</span>
-            </td>
-            <td th:each="q : ${item.questions}">
-                <div th:if="${q.passed} == false">
-                    <a th:href="@{/question(topicId=${item.id},questionId=${q.id})}">
-                        <span th:text="${q.cost}"></span>
-                    </a>
-                </div>
-            </td>
-        </tr>
-    </table>
-<button id="toDeskButton" class="navButton" onclick="location.href='/round';">round</button>
+<table>
+    <tr th:each="item : ${desk}">
+        <td>
+            <span th:text="${item.name}">Topic</span>
+        </td>
+        <td th:each="cost : ${item.costs}">
+            <div th:if="${cost.passed} == false">
+                <a th:if="${cost.cat} == false" th:href="@{/question(questionId=${cost.id})}">
+                    <span th:text="${cost.cost}"></span>
+                </a>
+                <a th:if="${cost.cat} == true" th:href="@{/cat(questionId=${cost.id})}">
+                    <span th:text="${cost.cost}"></span>
+                </a>
+            </div>
+        </td>
+    </tr>
+</table>
+<div id="button">
+    <a th:href="@{/round}">round</a>
+</div>
 </body>
 </html>

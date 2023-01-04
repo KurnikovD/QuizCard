@@ -17,10 +17,6 @@ th {
     font-size: 40px;
 
 }
-td {
-    border-bottom: 2px solid  #222226;
-
-}
 tr:hover td {
     background: #333336;
 }
@@ -42,13 +38,15 @@ a{
     color:#d5d5d5;
     text-decoration: none;
 }
-button{
+#button{
     background: #444446;
     color: #d5d5d5;
-    border: 0px;
-    font-size: 40px;
-    padding: 10px;
-    margin: 10px;
+    border-collapse: collapse;
+    border: 2px solid #d5d5d5;
+    font-size: 30px;
+    padding: 0px 10px 0px 10px;
+    position: absolute;
+    bottom: 0px;
 }
 .navButton{
     position: absolute;
