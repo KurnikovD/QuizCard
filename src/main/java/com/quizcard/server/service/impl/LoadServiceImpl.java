@@ -83,6 +83,7 @@ public class LoadServiceImpl implements LoadService {
     }
 
     public void savePack(MultipartFile file) {
+        exceptionLog = "";
         try {
             quiz = new Quiz();
             quiz.setTitle(file.getOriginalFilename().split("\\.")[0]);

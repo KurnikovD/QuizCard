@@ -30,8 +30,8 @@ public class UploadController {
     }
 
     @ExceptionHandler(LoadDataException.class)
-    public void handleLoadDataException(LoadDataException e) {
-        System.out.println(e.getMessage());
+    public String handleLoadDataException(LoadDataException e) {
+        return e.getMessage();
     }
 
 

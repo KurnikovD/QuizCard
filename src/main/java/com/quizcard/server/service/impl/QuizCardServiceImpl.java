@@ -110,7 +110,8 @@ public class QuizCardServiceImpl implements QuizCardService {
             for (CostDto costDto : deskDto.getCosts()) {
                 if (costDto.getId().equals(questionId)) {
                     costDto.setPassed(true);
-                    return toQuestionDto(questionRepository.findById(questionId).orElseThrow());
+                    Question question = questionRepository.findById(questionId).orElseThrow();
+                    return toQuestionDto(question);
                 }
             }
         }

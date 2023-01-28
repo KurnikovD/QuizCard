@@ -63,7 +63,7 @@ public class DeskController {
     }
 
     @GetMapping("/cat")
-    public String getCat(@RequestParam("catId") String questionId,
+    public String getCat(@RequestParam("questionId") String questionId,
                               Model model) {
 
         model.addAttribute("cat", quizCardService.getCat(questionId));
