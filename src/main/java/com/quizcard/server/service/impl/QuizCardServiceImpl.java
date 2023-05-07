@@ -125,11 +125,7 @@ public class QuizCardServiceImpl implements QuizCardService {
             case IMAGE, VIDEO, AUDIO -> media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
             default -> "";
         };
-        return new QuestionDto(it.getId(),
-                it.getQuestion(),
-                it.getQuestionMediaType().toString(),
-                mediaPath,
-                it.getCost());
+        return new QuestionDto(it.getId(), it.getQuestion(), it.getQuestionMediaType().toString(), mediaPath, it.getCost());
     }
 
     public AnswerDto getAnswer(String questionId) {
@@ -141,10 +137,7 @@ public class QuizCardServiceImpl implements QuizCardService {
             case IMAGE, VIDEO, AUDIO -> media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
             default -> "";
         };
-        return new AnswerDto(it.getId(),
-                it.getAnswer(),
-                it.getAnswerMediaType().toString(),
-                mediaPath);
+        return new AnswerDto(it.getId(), it.getAnswer(), it.getAnswerMediaType().toString(), mediaPath);
     }
 
     public CatDto getCat(String questionId) {
@@ -157,8 +150,7 @@ public class QuizCardServiceImpl implements QuizCardService {
             default -> media + quizDto.getId() + "/" + it.getId() + it.getCatMediaPath();
         };
 
-        return new CatDto(it.getId(),
-                mediaPath);
+        return new CatDto(it.getId(), mediaPath, it.getCatMediaType() == null ? "IMAGE" : it.getAnswerMediaType().toString());
     }
 
     public List<Quiz> getQuizByName(String name) {

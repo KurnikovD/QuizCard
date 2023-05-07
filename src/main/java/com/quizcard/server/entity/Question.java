@@ -21,6 +21,8 @@ public class Question {
 
     private Integer cost;
     private boolean isCat = false;
+    @Enumerated(EnumType.STRING)
+    private MediaType catMediaType = MediaType.NONE;
     private String catMediaPath;
 
     @Column(columnDefinition = "TEXT")

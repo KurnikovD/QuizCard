@@ -286,6 +286,7 @@ public class LoadServiceImpl implements LoadService {
                 String path = row.getCell(1).getStringCellValue();
                 saveMedia(question.getId() + "-cat", path);
                 question.setCatMediaPath("-cat." + path.split("\\.")[1]);
+                question.setCatMediaType(getMediaType(path));
             }
         }
 
