@@ -10,7 +10,11 @@ p{
     margin: 10px 10px 25px 10px;
 }
 img{
-    max-height: 450px;
+    max-height: 700px;
+}
+video{
+    height: 800px;
+    width: 90%;
 }
 #button{
     right: 5px;

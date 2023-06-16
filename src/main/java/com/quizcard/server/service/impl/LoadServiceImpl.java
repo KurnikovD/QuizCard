@@ -108,7 +108,7 @@ public class LoadServiceImpl implements LoadService {
             zipInputStream.closeEntry();
             zipInputStream.close();
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
