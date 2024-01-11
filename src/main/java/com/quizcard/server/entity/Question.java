@@ -21,13 +21,17 @@ public class Question {
 
     private Integer cost;
     private boolean isCat = false;
+    @Enumerated(EnumType.STRING)
+    private MediaType catMediaType = MediaType.NONE;
     private String catMediaPath;
 
+    @Column(columnDefinition = "TEXT")
     private String question;
     @Enumerated(EnumType.STRING)
     private MediaType questionMediaType = MediaType.NONE;
     private String questionMediaPath;
 
+    @Column(columnDefinition = "TEXT")
     private String answer;
     @Enumerated(EnumType.STRING)
     private MediaType answerMediaType = MediaType.NONE;

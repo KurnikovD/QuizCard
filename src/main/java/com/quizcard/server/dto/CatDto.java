@@ -10,5 +10,6 @@ import lombok.Setter;
 public class CatDto {
     private String id;
     private String mediaPath;
+    private String mediaType;
 }
 

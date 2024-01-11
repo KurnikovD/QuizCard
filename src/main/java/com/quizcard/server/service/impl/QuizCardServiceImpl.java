@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 //@Scope(value = WebApplicationContext.SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
@@ -44,11 +45,11 @@ public class QuizCardServiceImpl implements QuizCardService {
 
     public List<QuizDto> getAllQuiz() {
         return quizRepository.findByIsProtect(false).stream().map(it -> new QuizDto(
-                        it.getId(),
-                        it.getTitle(),
-                        roundRepository.findByQuiz_Id(it.getId()).size(),
-                        it.isProtect()))
-                .toList();
+                it.getId(),
+                it.getTitle(),
+                roundRepository.findByQuiz_Id(it.getId()).size(),
+                it.isProtect()))
+                .collect(Collectors.toList());
     }
 
     public void start(String quizId) {
@@ -61,19 +62,19 @@ public class QuizCardServiceImpl implements QuizCardService {
                 quizEntity.getTitle(),
                 roundRepository.findByQuiz_Id(quizId).size(),
                 quizEntity.isProtect());
-        roundDtos = roundRepository.findByQuiz_Id(quizId).stream().map(RoundDto::toRoundDto).toList();
+        roundDtos = roundRepository.findByQuiz_Id(quizId).stream().map(RoundDto::toRoundDto).collect(Collectors.toList());
         roundDtos.forEach(roundDto ->
                 roundDto.setDesk(topicRepository
                         .findByRound_Id(roundDto.getId())
                         .stream()
                         .map(this::toDeskDto)
-                        .toList()));
+                        .collect(Collectors.toList())));
     }
 
     private DeskDto toDeskDto(Topic topic) {
         return new DeskDto(topic.getId(),
                 topic.getName(),
-                questionRepository.findByTopic_IdOrderByCostAsc(topic.getId()).stream().map(this::toCostDto).toList());
+                questionRepository.findByTopic_IdOrderByCostAsc(topic.getId()).stream().map(this::toCostDto).collect(Collectors.toList()));
     }
 
     private CostDto toCostDto(Question question) {
@@ -110,7 +111,8 @@ public class QuizCardServiceImpl implements QuizCardService {
             for (CostDto costDto : deskDto.getCosts()) {
                 if (costDto.getId().equals(questionId)) {
                     costDto.setPassed(true);
-                    return toQuestionDto(questionRepository.findById(questionId).orElseThrow());
+                    Question question = questionRepository.findById(questionId).orElseThrow();
+                    return toQuestionDto(question);
                 }
             }
         }
@@ -120,15 +122,23 @@ public class QuizCardServiceImpl implements QuizCardService {
     }
 
     private QuestionDto toQuestionDto(Question it) {
-        String mediaPath = switch (it.getQuestionMediaType()) {
-            case IMAGE, VIDEO, AUDIO -> media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
-            default -> "";
-        };
-        return new QuestionDto(it.getId(),
-                it.getQuestion(),
-                it.getQuestionMediaType().toString(),
-                mediaPath,
-                it.getCost());
+        String mediaPath;
+        switch (it.getQuestionMediaType()) {
+            case IMAGE:
+                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
+                break;
+            case VIDEO:
+                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
+                break;
+            case AUDIO:
+                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
+                break;
+            default:
+                mediaPath = "";
+                break;
+        }
+        ;
+        return new QuestionDto(it.getId(), it.getQuestion(), it.getQuestionMediaType().toString(), mediaPath, it.getCost());
     }
 
     public AnswerDto getAnswer(String questionId) {
@@ -136,14 +146,23 @@ public class QuizCardServiceImpl implements QuizCardService {
     }
 
     private AnswerDto doAnswerDto(Question it) {
-        String mediaPath = switch (it.getAnswerMediaType()) {
-            case IMAGE, VIDEO, AUDIO -> media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
-            default -> "";
-        };
-        return new AnswerDto(it.getId(),
-                it.getAnswer(),
-                it.getAnswerMediaType().toString(),
-                mediaPath);
+        String mediaPath;
+        switch (it.getAnswerMediaType()) {
+            case IMAGE:
+                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
+                break;
+            case VIDEO:
+                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
+                break;
+            case AUDIO:
+                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
+                break;
+            default:
+                mediaPath = "";
+                break;
+        }
+        ;
+        return new AnswerDto(it.getId(), it.getAnswer(), it.getAnswerMediaType().toString(), mediaPath);
     }
 
     public CatDto getCat(String questionId) {
@@ -151,13 +170,18 @@ public class QuizCardServiceImpl implements QuizCardService {
     }
 
     private CatDto toCatDto(Question it) {
-        String mediaPath = switch (it.getCatMediaPath()) {
-            case "cat.jpg" -> media + "packs/cat.jpg";
-            default -> media + quizDto.getId() + "/" + it.getId() + it.getCatMediaPath();
-        };
+        String mediaPath;
+        switch (it.getCatMediaPath()) {
+            case "cat.jpg":
+                mediaPath = media + "packs/cat.jpg";
+                break;
+            default:
+                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getCatMediaPath();
+                break;
+        }
+        ;
 
-        return new CatDto(it.getId(),
-                mediaPath);
+        return new CatDto(it.getId(), mediaPath, it.getCatMediaType() == null ? "IMAGE" : it.getCatMediaType().toString());
     }
 
     public List<Quiz> getQuizByName(String name) {
@@ -171,6 +195,6 @@ public class QuizCardServiceImpl implements QuizCardService {
                 it.getTitle(),
                 roundRepository.findByQuiz_Id(it.getId()).size(),
                 it.isProtect())
-        ).toList();
+        ).collect(Collectors.toList());
     }
 }

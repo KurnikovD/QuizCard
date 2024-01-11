@@ -7,10 +7,25 @@
     <title>Cat</title>
 </head>
 <body>
-<p>КОТ В МЕШКЕ</p>
-<img th:src="${cat.mediaPath}" alt="Image">
-<div id="button">
-    <a th:href="@{/question(questionId=${cat.id})}">question</a>
-</div>
+    <p>КОТ В МЕШКЕ</p>
+    <div th:if="${cat.mediaType} == 'IMAGE'">
+        <img th:src="${cat.mediaPath}" alt="Image">
+    </div>
+    <div th:if="${cat.mediaType} == 'VIDEO'">
+        <video controls autoplay>
+            <source th:src="${cat.mediaPath}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div th:if="${cat.mediaType} == 'AUDIO'">
+        <audio controls autoplay>
+            <source th:src="${cat.mediaPath}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+    <div id="button">
+        <a th:href="@{/question(questionId=${cat.id})}">question</a>
+    </div>
 </body>
 </html>

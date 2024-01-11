@@ -83,6 +83,7 @@ public class LoadServiceImpl implements LoadService {
     }
 
     public void savePack(MultipartFile file) {
+        exceptionLog = "";
         try {
             quiz = new Quiz();
             quiz.setTitle(file.getOriginalFilename().split("\\.")[0]);
@@ -107,7 +108,7 @@ public class LoadServiceImpl implements LoadService {
             zipInputStream.closeEntry();
             zipInputStream.close();
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -285,6 +286,7 @@ public class LoadServiceImpl implements LoadService {
                 String path = row.getCell(1).getStringCellValue();
                 saveMedia(question.getId() + "-cat", path);
                 question.setCatMediaPath("-cat." + path.split("\\.")[1]);
+                question.setCatMediaType(getMediaType(path));
             }
         }
 
