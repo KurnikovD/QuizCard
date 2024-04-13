@@ -9,28 +9,36 @@
 </head>
 <body>
 <div>
-    <p><span th:text="${question.question}">Question</span></p>
+    <p th:text="${question.question}">Question</p>
 
     <div th:if="${question.mediaType} == 'IMAGE'">
         <img th:src="${question.mediaPath}" alt="Image">
     </div>
 
     <div th:if="${question.mediaType} == 'VIDEO'">
-        <video controls autoplay>
+        <video controls autoplay autofocus>
             <source th:src="${question.mediaPath}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
     </div>
 
     <div th:if="${question.mediaType} == 'AUDIO'">
-        <audio controls autoplay>
+        <audio controls autoplay autofocus>
             <source th:src="${question.mediaPath}" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
     </div>
 </div>
 <div id="button">
-    <a th:href="@{/answer(questionId=${question.id})}">answer</a>
+    <a id="goToAnswer" th:href="@{/answer(questionId=${question.id})}">answer</a>
 </div>
+<script>
+    document.addEventListener('keydown', (event) => {
+        console.log(event);
+        if(event.key === 'Enter') {
+            document.getElementById('goToAnswer').click();
+        }
+    });
+</script>
 </body>
 </html>

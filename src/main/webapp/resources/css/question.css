@@ -12,13 +12,15 @@ body{
 p{
     font-size: xxx-large;
     margin: 10px 10px 25px 10px;
+    white-space: pre-wrap;
 }
 img{
-    max-height: 750px;
+    width: 70%;
+    max-height: 70%;
 }
 video{
-    height: 750px;
-    width: 90%;
+    width: 70%;
+    max-height: 70%;
 }
 #button{
     right: 0px;

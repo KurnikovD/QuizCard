@@ -25,13 +25,13 @@ public class Question {
     private MediaType catMediaType = MediaType.NONE;
     private String catMediaPath;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     private String question;
     @Enumerated(EnumType.STRING)
     private MediaType questionMediaType = MediaType.NONE;
     private String questionMediaPath;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     private String answer;
     @Enumerated(EnumType.STRING)
     private MediaType answerMediaType = MediaType.NONE;

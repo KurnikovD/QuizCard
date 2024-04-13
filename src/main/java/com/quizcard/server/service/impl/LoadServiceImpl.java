@@ -12,12 +12,17 @@ import com.quizcard.server.service.LoadService;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.RemoveBucketArgs;
+import io.minio.SetBucketPolicyArgs;
 import io.minio.errors.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.binary.XSSFBParseException;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -113,6 +118,16 @@ public class LoadServiceImpl implements LoadService {
         }
     }
 
+    public void removeTempDir() {
+        dirTempPath = tempPath + quiz.getTitle() + File.separator;
+        File destDir = new File(dirTempPath);
+        try {
+            FileUtils.deleteDirectory(destDir);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void buildMinio() {
         MinioClient minioClient = new MinioClient.Builder()
                 .endpoint(minioUrl)
@@ -133,9 +148,29 @@ public class LoadServiceImpl implements LoadService {
                             .bucket(quiz.getId())
                             .build());
 
+            String policyJson = new JSONObject()
+                    .put("Version", "2012-10-17")
+                    .put("Statement", new JSONArray().put(
+                            new JSONObject()
+                                    .put("Effect", "Allow")
+                                    .put("Principal", new JSONObject().put("AWS", new JSONArray().put("*")))
+                                    .put("Action", new JSONArray().put("s3:GetObject"))
+                                    .put("Sid", "Public")
+                                    .put(
+                                            "Resource",
+                                            new JSONArray()
+                                                    .put(String.format("arn:aws:s3:::%s/*", quiz.getId()))
+
+                                    )
+                    ))
+                    .toString();
+
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder().bucket(quiz.getId()).config(policyJson).build());
+
         } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
                  InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
-                 XmlParserException e) {
+                 XmlParserException | JSONException e) {
             e.printStackTrace();
         }
 
@@ -195,6 +230,9 @@ public class LoadServiceImpl implements LoadService {
                 Topic currentTopic = null;
 
                 for (Row row : sheet) {
+                    if (isEmptyLine(row)) {
+                        break;
+                    }
                     if (isTopic(row)) {
                         currentTopic = saveTopic(row, currentRound, topicNumber++);
                     } else {
@@ -236,9 +274,9 @@ public class LoadServiceImpl implements LoadService {
                     RemoveBucketArgs.builder()
                             .bucket(quiz.getId())
                             .build());
-        }catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
-                InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
-                XmlParserException e){
+        } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
+                 InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
+                 XmlParserException e) {
             e.printStackTrace();
         }
 
@@ -257,14 +295,31 @@ public class LoadServiceImpl implements LoadService {
         return true;
     }
 
+    private boolean isEmptyLine(Row row) {
+        int count = 0;
+        for (Cell cell : row) {
+            if (!cellIsEmpty(cell)) {
+                return false;
+            } else {
+                count++;
+            }
+            if (count > 6) {
+                return true;
+            }
+        }
+        return true;
+    }
+
     private Round saveRound(Sheet sheet, int roundNumber) {
         return roundRepository.save(new Round(quiz, sheet.getSheetName(), roundNumber));
     }
 
     private Topic saveTopic(Row row, Round currentRound, int topicNumber) {
-        return topicRepository.save(new Topic(currentRound,
-                topicNumber,
-                row.getCell(0).getStringCellValue()));
+        return topicRepository.save(
+                new Topic(currentRound,
+                        topicNumber,
+                        row.getCell(0).getStringCellValue())
+        );
     }
 
     private void saveQuestion(Topic currentTopic, Row row) {
