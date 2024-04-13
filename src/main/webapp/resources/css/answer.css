@@ -4,8 +4,19 @@ p{
     left: 0;
     margin: 10px;
     padding: 10px;
+    white-space: pre-wrap;
 }
 
 #button{
     right: 0px;
+}
+
+
+img{
+    width: 70%;
+    max-height: 70%;
+}
+video{
+    width: 70%;
+    max-height: 70%;
 }

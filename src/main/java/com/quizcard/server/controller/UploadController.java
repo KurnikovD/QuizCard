@@ -26,6 +26,7 @@ public class UploadController {
 
         loadService.savePack(file);
         loadService.addData();
+        loadService.removeTempDir();
         return "redirect:/";
     }
 

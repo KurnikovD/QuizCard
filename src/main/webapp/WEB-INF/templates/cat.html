@@ -25,7 +25,16 @@
         </audio>
     </div>
     <div id="button">
-        <a th:href="@{/question(questionId=${cat.id})}">question</a>
+        <a id="goToQuestion" th:href="@{/question(questionId=${cat.id})}">question</a>
     </div>
+    <script>
+        document.addEventListener('keydown', (event) => {
+            console.log(event);
+            if(event.key === 'Enter') {
+                document.getElementById('goToQuestion' +
+                    '').click();
+            }
+        });
+    </script>
 </body>
 </html>

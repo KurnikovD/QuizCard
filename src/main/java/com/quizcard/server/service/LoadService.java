@@ -7,4 +7,5 @@ public interface LoadService {
     void savePack(MultipartFile file);
 
     void addData();
+    void removeTempDir();
 }
