@@ -19,7 +19,7 @@ public class Quiz {
     private String title;
 
     @Column(name = "is_protect")
-    private boolean isProtect = true;
+    private boolean isProtect;
 
     @Id
     @GeneratedValue(generator = "uuid")
@@ -32,4 +32,8 @@ public class Quiz {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public Quiz(String title) {
+        this.title = title;
+    }
 }

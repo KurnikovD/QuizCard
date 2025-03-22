@@ -45,7 +45,7 @@ public class SecurityConfiguration {
         httpSecurity.authorizeHttpRequests().antMatchers("/login").authenticated();
 
         httpSecurity.authorizeHttpRequests()
-                .antMatchers("/login", "/answer", "/question", "/start", "/round", "/desk", "/", "/cat").permitAll();
+                .antMatchers("/login", "/answer", "/question", "/start", "/round", "/desk", "/", "/cat", "/error").permitAll();
         httpSecurity.authorizeHttpRequests()
                 .antMatchers("/load", "/packLoad", "/profile").authenticated();
 

@@ -27,9 +27,5 @@ QuizCard:
   path:
     temp: "packs/temp/"
     media: "${spring.minio.url}/"
-  type:
-    image: "jpeg,jpg,png,gif"
-    audio: "mp3,wav"
-    video: "mp4,avi"
 server:
-  port: 8081
+  port: 8080

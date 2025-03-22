@@ -14,14 +14,16 @@ p{
     margin: 10px 10px 25px 10px;
     white-space: pre-wrap;
 }
-img{
-    width: 70%;
-    max-height: 70%;
+img {
+    max-width: 2400px;
+    max-height: 1200px;
 }
-video{
-    width: 70%;
-    max-height: 70%;
+video {
+    min-width: 1920px;
+    min-height: 1080px;
+    max-width: 2400px;
+    max-height: 1200px;
 }
 #button{
-    right: 0px;
+    right: 3px;
 }

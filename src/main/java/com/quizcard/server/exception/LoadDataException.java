@@ -1,12 +1,17 @@
 package com.quizcard.server.exception;
 
-public class LoadDataException extends Throwable {
-    private final String exceptionLog;
-    public LoadDataException(String exceptionLog) {
-        this.exceptionLog = exceptionLog;
-    }
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-    public String getExceptionLog() {
-        return exceptionLog;
+import java.util.List;
+
+@Getter
+@RequiredArgsConstructor
+public class LoadDataException extends RuntimeException {
+
+    private final List<String> exceptionLogs;
+
+    public LoadDataException(String singleErrorMessage) {
+        exceptionLogs = List.of(singleErrorMessage);
     }
 }

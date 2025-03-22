@@ -9,7 +9,6 @@ table{
     margin: auto;
 }
 th {
-    font-size: 13px;
     font-weight: normal;
     background: #333336;
     border-bottom: 20px solid #222226;
@@ -42,11 +41,12 @@ a{
     background: #444446;
     color: #d5d5d5;
     border-collapse: collapse;
-    border: 2px solid #d5d5d5;
+    border: 5px solid #222226;
     font-size: 30px;
     padding: 0px 10px 0px 10px;
     position: absolute;
-    bottom: 0px;
+    bottom: 3px;
+    border-radius: 9px; 
 }
 .navButton{
     position: absolute;

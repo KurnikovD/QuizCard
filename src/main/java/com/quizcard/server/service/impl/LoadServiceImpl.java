@@ -1,28 +1,21 @@
 package com.quizcard.server.service.impl;
 
-import com.jlefebure.spring.boot.minio.MinioConfigurationProperties;
 import com.jlefebure.spring.boot.minio.MinioException;
-import com.jlefebure.spring.boot.minio.MinioService;
 import com.quizcard.server.entity.*;
+import com.quizcard.server.exception.LoadDataException;
 import com.quizcard.server.repository.QuestionRepository;
 import com.quizcard.server.repository.QuizRepository;
 import com.quizcard.server.repository.RoundRepository;
 import com.quizcard.server.repository.TopicRepository;
+import com.quizcard.server.security.CustomMinioService;
 import com.quizcard.server.service.LoadService;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.RemoveBucketArgs;
-import io.minio.SetBucketPolicyArgs;
-import io.minio.errors.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.binary.XSSFBParseException;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,64 +27,44 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static com.quizcard.server.util.ExcelUtil.getNumberValue;
+import static com.quizcard.server.util.ExcelUtil.getValue;
+import static com.quizcard.server.util.FileUtils.getExtension;
+import static com.quizcard.server.util.StringUtil.isBlank;
+
 @Service
 //@Scope(value = WebApplicationContext.SCOPE_SESSION,
 //        proxyMode = ScopedProxyMode.TARGET_CLASS)
+@Slf4j
+@RequiredArgsConstructor
 public class LoadServiceImpl implements LoadService {
 
     @Value("${QuizCard.path.temp}")
     private String tempPath;
-    @Value("${QuizCard.type.image}")
-    private String imageType;
-    @Value("${QuizCard.type.video}")
-    private String videoType;
-    @Value("${QuizCard.type.audio}")
-    private String audioType;
-
-    @Value("${spring.minio.url}")
-    private String minioUrl;
-    @Value("${spring.minio.access-key}")
-    private String minioAccessKey;
-    @Value("${spring.minio.secret-key}")
-    private String minioSecretKey;
 
     private final QuizRepository quizRepository;
     private final RoundRepository roundRepository;
     private final TopicRepository topicRepository;
     private final QuestionRepository questionRepository;
+    private final CustomMinioService minioService;
 
-    private MinioService minioService;
-    private String exceptionLog = "";
+    private List<String> exceptionLogs;
 
-    private List<Path> files = new ArrayList<>();
+    private final List<Path> files = new ArrayList<>();
 
     private Quiz quiz;
     private String dataFileName;
     private String dirTempPath;
 
-    public LoadServiceImpl(QuizRepository quizRepository,
-                           RoundRepository roundRepository,
-                           TopicRepository topicRepository,
-                           QuestionRepository questionRepository) {
-        this.quizRepository = quizRepository;
-        this.roundRepository = roundRepository;
-        this.topicRepository = topicRepository;
-        this.questionRepository = questionRepository;
-    }
-
     public void savePack(MultipartFile file) {
-        exceptionLog = "";
+        exceptionLogs = new ArrayList<>();
         try {
-            quiz = new Quiz();
-            quiz.setTitle(file.getOriginalFilename().split("\\.")[0]);
+            quiz = new Quiz(file.getOriginalFilename().split("\\.")[0]);
             dirTempPath = tempPath + quiz.getTitle() + File.separator;
             File destDir = new File(dirTempPath);
 
@@ -102,19 +75,21 @@ public class LoadServiceImpl implements LoadService {
                 File newFile = newFile(destDir, entry);
                 if (entry.isDirectory()) {
                     if (!newFile.isDirectory() && !newFile.mkdirs()) {
-                        throw new IOException("Failed to create directory " + newFile);
+                        throw new LoadDataException("Failed to create directory " + newFile.getName());
                     }
                 } else {
                     saveFile(zipInputStream, buffer, entry, newFile);
-
                 }
                 entry = zipInputStream.getNextEntry();
             }
             zipInputStream.closeEntry();
             zipInputStream.close();
 
+            log.info("Successfully unpacked: {}", file.getOriginalFilename());
+
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
+            throw new LoadDataException("Failed to process file " + file.getOriginalFilename());
         }
     }
 
@@ -126,56 +101,6 @@ public class LoadServiceImpl implements LoadService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void buildMinio() {
-        MinioClient minioClient = new MinioClient.Builder()
-                .endpoint(minioUrl)
-                .credentials(minioAccessKey, minioSecretKey)
-                .build();
-
-        MinioConfigurationProperties minioConfigurationProperties = new MinioConfigurationProperties();
-        minioConfigurationProperties.setUrl(minioUrl);
-        minioConfigurationProperties.setAccessKey(minioAccessKey);
-        minioConfigurationProperties.setSecretKey(minioSecretKey);
-        minioConfigurationProperties.setSecure(false);
-        minioConfigurationProperties.setBucket(quiz.getId());
-
-
-        try {
-            minioClient.makeBucket(
-                    MakeBucketArgs.builder()
-                            .bucket(quiz.getId())
-                            .build());
-
-            String policyJson = new JSONObject()
-                    .put("Version", "2012-10-17")
-                    .put("Statement", new JSONArray().put(
-                            new JSONObject()
-                                    .put("Effect", "Allow")
-                                    .put("Principal", new JSONObject().put("AWS", new JSONArray().put("*")))
-                                    .put("Action", new JSONArray().put("s3:GetObject"))
-                                    .put("Sid", "Public")
-                                    .put(
-                                            "Resource",
-                                            new JSONArray()
-                                                    .put(String.format("arn:aws:s3:::%s/*", quiz.getId()))
-
-                                    )
-                    ))
-                    .toString();
-
-            minioClient.setBucketPolicy(
-                    SetBucketPolicyArgs.builder().bucket(quiz.getId()).config(policyJson).build());
-
-        } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
-                 InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
-                 XmlParserException | JSONException e) {
-            e.printStackTrace();
-        }
-
-
-        minioService = new MinioService(minioClient, minioConfigurationProperties);
     }
 
     private void saveFile(ZipInputStream zipInputStream, byte[] buffer, ZipEntry entry, File newFile) throws IOException {
@@ -215,15 +140,15 @@ public class LoadServiceImpl implements LoadService {
     public void addData() {
         try (
                 FileInputStream fileInputStream = new FileInputStream(dirTempPath + dataFileName);
-                XSSFWorkbook workbook = new XSSFWorkbook(fileInputStream);
+                XSSFWorkbook workbook = new XSSFWorkbook(fileInputStream)
         ) {
-
             quiz = quizRepository.save(quiz);
-            buildMinio();
+            minioService.createBucket(quiz.getId());
 
             int roundNumber = 0;
-
+            log.info(" --- Start save quiz data --- ");
             for (Sheet sheet : workbook) {
+                log.info("\t{}. Start save round: {}", roundNumber + 1, sheet.getSheetName());
                 Round currentRound = saveRound(sheet, roundNumber++);
 
                 int topicNumber = 0;
@@ -235,61 +160,43 @@ public class LoadServiceImpl implements LoadService {
                     }
                     if (isTopic(row)) {
                         currentTopic = saveTopic(row, currentRound, topicNumber++);
+                        log.info("\t\t{}. Create new topic: {}", currentTopic.getTopicNumber(), currentTopic.getName());
                     } else {
                         if (currentTopic == null) {
-                            throw new XSSFBParseException("Topic is null - " + sheet.getSheetName() + " " + row.getRowNum());
+                            throw new LoadDataException(
+                                    "Topic is empty on " + sheet.getSheetName() + " at " + row.getRowNum()
+                            );
                         }
                         saveQuestion(currentTopic, row);
                     }
                 }
-
             }
-
         } catch (IOException e) {
-            throw new IllegalArgumentException(e);
+            throw new LoadDataException("Failed to load data from " + dirTempPath + dataFileName);
         }
 
-        if (!exceptionLog.isEmpty()) {
-            clearerFiles();
-            throw new IllegalArgumentException(exceptionLog);
+        if (!exceptionLogs.isEmpty()) {
+            minioService.clearerFiles(files, quiz.getId());
+            throw new LoadDataException(exceptionLogs);
         }
 
-    }
-
-    private void clearerFiles() {
-        files.forEach(path -> {
-            try {
-                minioService.remove(path);
-            } catch (MinioException e) {
-                e.printStackTrace();
-            }
-        });
-
-        MinioClient minioClient = new MinioClient.Builder()
-                .endpoint(minioUrl)
-                .credentials(minioAccessKey, minioSecretKey)
-                .build();
-        try {
-            minioClient.removeBucket(
-                    RemoveBucketArgs.builder()
-                            .bucket(quiz.getId())
-                            .build());
-        } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
-                 InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
-                 XmlParserException e) {
-            e.printStackTrace();
-        }
+        log.info(" --- Quiz successfully upload ---");
 
     }
 
     private boolean isTopic(Row row) {
         int count = 0;
+        int maxCount = 4;
         for (Cell cell : row) {
-            if (!cellIsEmpty(cell)) {
+            maxCount--;
+            if (!isBlank(getValue(cell))) {
                 count++;
             }
             if (count > 1) {
                 return false;
+            }
+            if (maxCount == 0 && count == 1) {
+                return true;
             }
         }
         return true;
@@ -298,11 +205,10 @@ public class LoadServiceImpl implements LoadService {
     private boolean isEmptyLine(Row row) {
         int count = 0;
         for (Cell cell : row) {
-            if (!cellIsEmpty(cell)) {
+            if (!isBlank(getValue(cell))) {
                 return false;
-            } else {
-                count++;
             }
+            count++;
             if (count > 6) {
                 return true;
             }
@@ -327,70 +233,68 @@ public class LoadServiceImpl implements LoadService {
         question = questionRepository.save(question);
 
         // cost
-        if (cellIsEmpty(row.getCell(0))) {
-            exceptionLog += "Cost is not set - " + row.getRowNum() + ":0\n";
+        Integer costValue = getNumberValue(row.getCell(0));
+        if (costValue == null) {
+            exceptionLogs.add("Cost is not set - " + row.getRowNum() + ":0");
         }
-        question.setCost((int) Double.parseDouble(row.getCell(0).toString()));
-
+        question.setCost(costValue);
         // cat
-        if (!cellIsEmpty(row.getCell(1))) {
+        String catCell = getValue(row.getCell(1));
+        if (!isBlank(catCell)) {
             question.setCat(true);
-            if (row.getCell(1).getStringCellValue().equals("cat")) {
+            if (catCell.equals("cat")) {
                 question.setCatMediaPath("cat.jpg");
             } else {
-                String path = row.getCell(1).getStringCellValue();
-                saveMedia(question.getId() + "-cat", path);
-                question.setCatMediaPath("-cat." + path.split("\\.")[1]);
-                question.setCatMediaType(getMediaType(path));
+                saveMedia(question.getId() + "-cat", catCell);
+                question.setCatMediaPath("-cat." + getExtension(catCell));
+                question.setCatMediaType(getMediaType(catCell));
             }
         }
 
         // question
         int questionCellNumber = 2;
-        if (!cellIsEmpty(row.getCell(2))) {
-            question.setQuestion(row.getCell(2).toString());
+        String questionCell = getValue(row.getCell(2));
+        if (!isBlank(questionCell)) {
+            question.setQuestion(questionCell);
         } else {
             questionCellNumber--;
         }
 
-        if (!cellIsEmpty(row.getCell(3))) {
-            String path = row.getCell(3).getStringCellValue();
-            saveMedia(question.getId() + "-question", path);
-            question.setQuestionMediaType(getMediaType(path));
-            question.setQuestionMediaPath("-question." + path.split("\\.")[1]);
+        String questionMediaCell = getValue(row.getCell(3));
+        if (!isBlank(questionMediaCell)) {
+            saveMedia(question.getId() + "-question", questionMediaCell);
+            question.setQuestionMediaType(getMediaType(questionMediaCell));
+            question.setQuestionMediaPath("-question." + getExtension(questionMediaCell));
         } else {
             questionCellNumber--;
         }
 
         if (questionCellNumber == 0) {
-            exceptionLog += "Question is not set - " + row.getRowNum() + ":2,3\n";
+            exceptionLogs.add("Question is not set - " + row.getRowNum() + ":2,3");
         }
 
         // answer
         int answerCellNumber = 2;
-        if (!cellIsEmpty(row.getCell(4))) {
-            question.setAnswer(row.getCell(4).toString());
+        String answerCell = getValue(row.getCell(4));
+        if (!isBlank(answerCell)) {
+            question.setAnswer(answerCell);
         } else {
             answerCellNumber--;
         }
 
-        if (!cellIsEmpty(row.getCell(5))) {
-            String path = row.getCell(5).getStringCellValue();
-            saveMedia(question.getId() + "-answer", path);
-            question.setAnswerMediaType(getMediaType(path));
-            question.setAnswerMediaPath("-answer." + path.split("\\.")[1]);
+        String answerMediaCell = getValue(row.getCell(5));
+        if (!isBlank(answerMediaCell)) {
+            saveMedia(question.getId() + "-answer", answerMediaCell);
+            question.setAnswerMediaType(getMediaType(answerMediaCell));
+            question.setAnswerMediaPath("-answer." + getExtension(answerMediaCell));
         } else {
             answerCellNumber--;
         }
         if (answerCellNumber == 0) {
-            exceptionLog += "Answer is not set - " + row.getRowNum() + "4,5\n";
+            exceptionLogs.add("Answer is not set - " + row.getRowNum() + ":4,5");
         }
 
         questionRepository.save(question);
-    }
-
-    private boolean cellIsEmpty(Cell cell) {
-        return cell == null || cell.toString().isEmpty();
     }
 
     private void saveMedia(String id, String mediaPath) {
@@ -400,44 +304,20 @@ public class LoadServiceImpl implements LoadService {
             minioService.upload(to, from);
             files.add(to);
         } catch (MinioException e) {
-            exceptionLog += "File not found:" + e.getStackTrace()[0].getLineNumber() + ":" + mediaPath + "\n";
+            exceptionLogs.add("File not found:" + mediaPath);
         }
     }
 
     private String getPathToMedia(String id, String mediaPath) {
-        return id + "." + mediaPath.split("\\.")[1];
+        return id + "." + getExtension(mediaPath);
     }
 
     private MediaType getMediaType(String mediaPath) {
         if (mediaPath == null || mediaPath.isEmpty()) {
             return MediaType.NONE;
         }
-        String fileExtension = mediaPath.split("\\.")[1];
 
-        if (isImage(fileExtension)) {
-            return MediaType.IMAGE;
-        }
-        if (isVideo(fileExtension)) {
-            return MediaType.VIDEO;
-        }
-        if (isAudio(fileExtension)) {
-            return MediaType.AUDIO;
-        }
-        return MediaType.NONE;
+        return MediaType.byExtension(getExtension(mediaPath));
     }
 
-    private boolean isAudio(String fileExtension) {
-        String[] audio = audioType.split(",");
-        return Arrays.asList(audio).contains(fileExtension);
-    }
-
-    private boolean isVideo(String fileExtension) {
-        String[] video = videoType.split(",");
-        return Arrays.asList(video).contains(fileExtension);
-    }
-
-    private boolean isImage(String fileExtension) {
-        String[] image = imageType.split(",");
-        return Arrays.asList(image).contains(fileExtension);
-    }
 }

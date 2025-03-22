@@ -29,11 +29,4 @@ public class UploadController {
         loadService.removeTempDir();
         return "redirect:/";
     }
-
-    @ExceptionHandler(LoadDataException.class)
-    public String handleLoadDataException(LoadDataException e) {
-        return e.getMessage();
-    }
-
-
 }
