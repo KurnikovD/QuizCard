@@ -10,6 +10,7 @@ import com.quizcard.server.repository.QuizRepository;
 import com.quizcard.server.repository.RoundRepository;
 import com.quizcard.server.repository.TopicRepository;
 import com.quizcard.server.service.QuizCardService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +18,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 //@Scope(value = WebApplicationContext.SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class QuizCardServiceImpl implements QuizCardService {
 
-    final QuizRepository quizRepository;
-    final RoundRepository roundRepository;
-    final TopicRepository topicRepository;
-    final QuestionRepository questionRepository;
+    private final QuizRepository quizRepository;
+    private final RoundRepository roundRepository;
+    private final TopicRepository topicRepository;
+    private final QuestionRepository questionRepository;
 
     @Value("${QuizCard.path.media}")
     private String media;
@@ -33,22 +35,9 @@ public class QuizCardServiceImpl implements QuizCardService {
     private String currentRoundId;
     private List<DeskDto> currentDesk;
 
-    public QuizCardServiceImpl(QuizRepository quizRepository,
-                               RoundRepository roundRepository,
-                               TopicRepository topicRepository,
-                               QuestionRepository questionRepository) {
-        this.quizRepository = quizRepository;
-        this.roundRepository = roundRepository;
-        this.topicRepository = topicRepository;
-        this.questionRepository = questionRepository;
-    }
-
     public List<QuizDto> getAllQuiz() {
-        return quizRepository.findByIsProtect(false).stream().map(it -> new QuizDto(
-                it.getId(),
-                it.getTitle(),
-                roundRepository.findByQuiz_Id(it.getId()).size(),
-                it.isProtect()))
+        return quizRepository.findByIsProtect(false).stream()
+                .map(QuizDto::new)
                 .collect(Collectors.toList());
     }
 
@@ -62,7 +51,9 @@ public class QuizCardServiceImpl implements QuizCardService {
                 quizEntity.getTitle(),
                 roundRepository.findByQuiz_Id(quizId).size(),
                 quizEntity.isProtect());
-        roundDtos = roundRepository.findByQuiz_Id(quizId).stream().map(RoundDto::toRoundDto).collect(Collectors.toList());
+        roundDtos = roundRepository.findByQuiz_Id(quizId).stream()
+                .map(RoundDto::toRoundDto)
+                .collect(Collectors.toList());
         roundDtos.forEach(roundDto ->
                 roundDto.setDesk(topicRepository
                         .findByRound_Id(roundDto.getId())
@@ -72,16 +63,19 @@ public class QuizCardServiceImpl implements QuizCardService {
     }
 
     private DeskDto toDeskDto(Topic topic) {
-        return new DeskDto(topic.getId(),
-                topic.getName(),
-                questionRepository.findByTopic_IdOrderByCostAsc(topic.getId()).stream().map(this::toCostDto).collect(Collectors.toList()));
+        List<CostDto> costs = questionRepository.findByTopic_IdOrderByCostAsc(topic.getId()).stream()
+                .map(this::toCostDto)
+                .collect(Collectors.toList());
+        return new DeskDto(topic.getId(), topic.getName(), costs);
     }
 
     private CostDto toCostDto(Question question) {
-        return new CostDto(question.getId(),
+        return new CostDto(
+                question.getId(),
                 question.getCost(),
                 question.isCat(),
-                false);
+                false
+        );
     }
 
     public void createDesk(String roundId) {
@@ -95,7 +89,11 @@ public class QuizCardServiceImpl implements QuizCardService {
 
     public boolean checkRoundsEnd() {
         if (currentDesk.stream().allMatch(t -> t.getCosts().stream().allMatch(CostDto::isPassed))) {
-            roundDtos.stream().filter(it -> it.getId().equals(currentRoundId)).findFirst().orElseThrow().setPassed(true);
+            roundDtos.stream()
+                    .filter(it -> it.getId().equals(currentRoundId))
+                    .findFirst()
+                    .orElseThrow()
+                    .setPassed(true);
             return true;
         }
         return false;
@@ -122,23 +120,7 @@ public class QuizCardServiceImpl implements QuizCardService {
     }
 
     private QuestionDto toQuestionDto(Question it) {
-        String mediaPath;
-        switch (it.getQuestionMediaType()) {
-            case IMAGE:
-                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
-                break;
-            case VIDEO:
-                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
-                break;
-            case AUDIO:
-                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getQuestionMediaPath();
-                break;
-            default:
-                mediaPath = "";
-                break;
-        }
-        ;
-        return new QuestionDto(it.getId(), it.getQuestion(), it.getQuestionMediaType().toString(), mediaPath, it.getCost());
+        return new QuestionDto(it, media);
     }
 
     public AnswerDto getAnswer(String questionId) {
@@ -146,23 +128,7 @@ public class QuizCardServiceImpl implements QuizCardService {
     }
 
     private AnswerDto doAnswerDto(Question it) {
-        String mediaPath;
-        switch (it.getAnswerMediaType()) {
-            case IMAGE:
-                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
-                break;
-            case VIDEO:
-                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
-                break;
-            case AUDIO:
-                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getAnswerMediaPath();
-                break;
-            default:
-                mediaPath = "";
-                break;
-        }
-        ;
-        return new AnswerDto(it.getId(), it.getAnswer(), it.getAnswerMediaType().toString(), mediaPath);
+        return new AnswerDto(it, media);
     }
 
     public CatDto getCat(String questionId) {
@@ -170,18 +136,7 @@ public class QuizCardServiceImpl implements QuizCardService {
     }
 
     private CatDto toCatDto(Question it) {
-        String mediaPath;
-        switch (it.getCatMediaPath()) {
-            case "cat.jpg":
-                mediaPath = media + "packs/cat.jpg";
-                break;
-            default:
-                mediaPath = media + quizDto.getId() + "/" + it.getId() + it.getCatMediaPath();
-                break;
-        }
-        ;
-
-        return new CatDto(it.getId(), mediaPath, it.getCatMediaType() == null ? "IMAGE" : it.getCatMediaType().toString());
+        return new CatDto(it, media);
     }
 
     public List<Quiz> getQuizByName(String name) {
@@ -190,11 +145,8 @@ public class QuizCardServiceImpl implements QuizCardService {
 
 
     public List<QuizDto> getAllUsersAndPublicQuiz(User user) {
-        return quizRepository.findByUser_IdOrIsProtect(user.getId(), false).stream().map(it -> new QuizDto(
-                it.getId(),
-                it.getTitle(),
-                roundRepository.findByQuiz_Id(it.getId()).size(),
-                it.isProtect())
-        ).collect(Collectors.toList());
+        return quizRepository.findByUser_IdOrIsProtect(user.getId(), false).stream()
+                .map(QuizDto::new)
+                .collect(Collectors.toList());
     }
 }

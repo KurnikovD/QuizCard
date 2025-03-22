@@ -224,7 +224,8 @@ public class LoadServiceImpl implements LoadService {
         return topicRepository.save(
                 new Topic(currentRound,
                         topicNumber,
-                        row.getCell(0).getStringCellValue())
+                        getValue(row.getCell(0))
+                )
         );
     }
 
@@ -298,13 +299,15 @@ public class LoadServiceImpl implements LoadService {
     }
 
     private void saveMedia(String id, String mediaPath) {
-        File from = new File(dirTempPath + mediaPath);
-        Path to = Paths.get(getPathToMedia(id, mediaPath));
         try {
+            File from = new File(dirTempPath + mediaPath);
+            Path to = Paths.get(getPathToMedia(id, mediaPath));
             minioService.upload(to, from);
             files.add(to);
         } catch (MinioException e) {
             exceptionLogs.add("File not found:" + mediaPath);
+        } catch (Exception e) {
+            exceptionLogs.add("Something wrong with file:" + mediaPath + ":" + e.getMessage());
         }
     }
 
