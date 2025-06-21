@@ -36,6 +36,7 @@ import static com.quizcard.server.util.ExcelUtil.getNumberValue;
 import static com.quizcard.server.util.ExcelUtil.getValue;
 import static com.quizcard.server.util.FileUtils.getExtension;
 import static com.quizcard.server.util.StringUtil.isBlank;
+import static java.lang.String.format;
 
 @Service
 //@Scope(value = WebApplicationContext.SCOPE_SESSION,
@@ -75,7 +76,7 @@ public class LoadServiceImpl implements LoadService {
                 File newFile = newFile(destDir, entry);
                 if (entry.isDirectory()) {
                     if (!newFile.isDirectory() && !newFile.mkdirs()) {
-                        throw new LoadDataException("Failed to create directory " + newFile.getName());
+                        throw new LoadDataException(format("Failed to create directory %s", newFile.getName()));
                     }
                 } else {
                     saveFile(zipInputStream, buffer, entry, newFile);
@@ -89,7 +90,7 @@ public class LoadServiceImpl implements LoadService {
 
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new LoadDataException("Failed to process file " + file.getOriginalFilename());
+            throw new LoadDataException(format("Failed to process file %s", file.getOriginalFilename()));
         }
     }
 
@@ -106,7 +107,7 @@ public class LoadServiceImpl implements LoadService {
     private void saveFile(ZipInputStream zipInputStream, byte[] buffer, ZipEntry entry, File newFile) throws IOException {
         File parent = newFile.getParentFile();
         if (!parent.isDirectory() && !parent.mkdirs()) {
-            throw new IOException("Failed to create directory " + parent);
+            throw new IOException(format("Failed to create directory %s", parent));
         }
 
         if (entry.getName().contains(".xlsx")) {
@@ -129,7 +130,7 @@ public class LoadServiceImpl implements LoadService {
         String destFilePath = destFile.getCanonicalPath();
 
         if (!destFilePath.startsWith(destDirPath + File.separator)) {
-            throw new IOException("Entry is outside of the target dir: " + entry.getName());
+            throw new IOException(format("Entry is outside of the target dir: %s", entry.getName()));
         }
 
         return destFile;
@@ -164,7 +165,7 @@ public class LoadServiceImpl implements LoadService {
                     } else {
                         if (currentTopic == null) {
                             throw new LoadDataException(
-                                    "Topic is empty on " + sheet.getSheetName() + " at " + row.getRowNum()
+                                    format("Topic is empty on %s at %d", sheet.getSheetName(), row.getRowNum())
                             );
                         }
                         saveQuestion(currentTopic, row);
@@ -172,7 +173,7 @@ public class LoadServiceImpl implements LoadService {
                 }
             }
         } catch (IOException e) {
-            throw new LoadDataException("Failed to load data from " + dirTempPath + dataFileName);
+            throw new LoadDataException(format("Failed to load data from %s%s", dirTempPath, dataFileName));
         }
 
         if (!exceptionLogs.isEmpty()) {
@@ -236,7 +237,7 @@ public class LoadServiceImpl implements LoadService {
         // cost
         Integer costValue = getNumberValue(row.getCell(0));
         if (costValue == null) {
-            exceptionLogs.add("Cost is not set - " + row.getRowNum() + ":0");
+            exceptionLogs.add(format("Cost is not set - %s:%d:0",currentTopic.getName(), row.getRowNum()));
         }
         question.setCost(costValue);
         // cat
@@ -247,52 +248,45 @@ public class LoadServiceImpl implements LoadService {
                 question.setCatMediaPath("cat.jpg");
             } else {
                 saveMedia(question.getId() + "-cat", catCell);
-                question.setCatMediaPath("-cat." + getExtension(catCell));
-                question.setCatMediaType(getMediaType(catCell));
+                String extension = getExtension(catCell);
+                question.setCatMediaPath("-cat." + extension);
+                question.setCatMediaType(MediaType.byExtension(extension));
             }
         }
 
         // question
-        int questionCellNumber = 2;
         String questionCell = getValue(row.getCell(2));
         if (!isBlank(questionCell)) {
             question.setQuestion(questionCell);
-        } else {
-            questionCellNumber--;
         }
 
         String questionMediaCell = getValue(row.getCell(3));
         if (!isBlank(questionMediaCell)) {
             saveMedia(question.getId() + "-question", questionMediaCell);
-            question.setQuestionMediaType(getMediaType(questionMediaCell));
-            question.setQuestionMediaPath("-question." + getExtension(questionMediaCell));
-        } else {
-            questionCellNumber--;
+            String extension = getExtension(questionMediaCell);
+            question.setQuestionMediaType(MediaType.byExtension(extension));
+            question.setQuestionMediaPath("-question." + extension);
         }
 
-        if (questionCellNumber == 0) {
-            exceptionLogs.add("Question is not set - " + row.getRowNum() + ":2,3");
+        if (isBlank(questionMediaCell) && isBlank(questionCell)) {
+            exceptionLogs.add(format("Question is not set - %s:%d:2,3", currentTopic.getName(), row.getRowNum() + 1));
         }
 
         // answer
-        int answerCellNumber = 2;
         String answerCell = getValue(row.getCell(4));
         if (!isBlank(answerCell)) {
             question.setAnswer(answerCell);
-        } else {
-            answerCellNumber--;
         }
 
         String answerMediaCell = getValue(row.getCell(5));
         if (!isBlank(answerMediaCell)) {
             saveMedia(question.getId() + "-answer", answerMediaCell);
-            question.setAnswerMediaType(getMediaType(answerMediaCell));
-            question.setAnswerMediaPath("-answer." + getExtension(answerMediaCell));
-        } else {
-            answerCellNumber--;
+            String extension = getExtension(answerMediaCell);
+            question.setAnswerMediaType(MediaType.byExtension(extension));
+            question.setAnswerMediaPath("-answer." + extension);
         }
-        if (answerCellNumber == 0) {
-            exceptionLogs.add("Answer is not set - " + row.getRowNum() + ":4,5");
+        if (isBlank(answerCell) && isBlank(answerMediaCell)) {
+            exceptionLogs.add(format("Answer is not set - %s:%d:4,5", currentTopic.getName(), row.getRowNum() + 1));
         }
 
         questionRepository.save(question);
@@ -301,26 +295,14 @@ public class LoadServiceImpl implements LoadService {
     private void saveMedia(String id, String mediaPath) {
         try {
             File from = new File(dirTempPath + mediaPath);
-            Path to = Paths.get(getPathToMedia(id, mediaPath));
+            Path to = Paths.get(id + "." + getExtension(mediaPath));
             minioService.upload(to, from);
             files.add(to);
         } catch (MinioException e) {
             exceptionLogs.add("File not found:" + mediaPath);
         } catch (Exception e) {
-            exceptionLogs.add("Something wrong with file:" + mediaPath + ":" + e.getMessage());
+            exceptionLogs.add(format("Something wrong with file: %s:%s", mediaPath, e.getMessage()));
         }
-    }
-
-    private String getPathToMedia(String id, String mediaPath) {
-        return id + "." + getExtension(mediaPath);
-    }
-
-    private MediaType getMediaType(String mediaPath) {
-        if (mediaPath == null || mediaPath.isEmpty()) {
-            return MediaType.NONE;
-        }
-
-        return MediaType.byExtension(getExtension(mediaPath));
     }
 
 }

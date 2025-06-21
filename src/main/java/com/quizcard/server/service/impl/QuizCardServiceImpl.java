@@ -12,10 +12,13 @@ import com.quizcard.server.repository.TopicRepository;
 import com.quizcard.server.service.QuizCardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.quizcard.server.repository.QuizRepository.byIsProtect;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +39,10 @@ public class QuizCardServiceImpl implements QuizCardService {
     private List<DeskDto> currentDesk;
 
     public List<QuizDto> getAllQuiz() {
-        return quizRepository.findByIsProtect(false).stream()
+        return quizRepository.findAll(
+                byIsProtect(false),
+                        Sort.by(Sort.Direction.DESC, "createdDate")
+                ).stream()
                 .map(QuizDto::new)
                 .collect(Collectors.toList());
     }
