@@ -1,5 +1,6 @@
 package com.quizcard.server.dto;
 
+import com.quizcard.server.entity.Quiz;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,4 +13,11 @@ public class QuizDto {
     private String title;
     private Integer countOfRounds;
     private boolean isPublic;
+
+    public QuizDto(Quiz quiz) {
+        this.id = quiz.getId();
+        this.title = quiz.getTitle();
+        this.countOfRounds = quiz.getRounds().size();
+        this.isPublic = quiz.isProtect();
+    }
 }

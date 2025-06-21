@@ -47,4 +47,8 @@ public class Topic {
         this.topicNumber = topicNumber;
         this.name = stringCellValue;
     }
+
+    public Quiz getQuiz() {
+        return round.getQuiz();
+    }
 }

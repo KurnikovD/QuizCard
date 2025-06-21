@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class Quiz {
     private String title;
 
     @Column(name = "is_protect")
-    private boolean isProtect = true;
+    private boolean isProtect;
 
     @Id
     @GeneratedValue(generator = "uuid")
@@ -32,4 +33,10 @@ public class Quiz {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     private User user;
+
+    private LocalDateTime createdDate = LocalDateTime.now();
+
+    public Quiz(String title) {
+        this.title = title;
+    }
 }

@@ -1,5 +1,6 @@
 package com.quizcard.server.entity;
 
+import com.fasterxml.jackson.annotation.JacksonInject;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -48,4 +49,7 @@ public class Question {
         this.topic = topic;
     }
 
+    public Quiz getQuiz() {
+        return topic.getQuiz();
+    }
 }

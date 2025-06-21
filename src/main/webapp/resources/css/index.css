@@ -1,13 +1,15 @@
-table{
+table {
     border-collapse: collapse;
-    font-size: 40px;
-    width:70%;
+    font-size: 60px;
+    width: 70%;
 }
-td{
+
+td {
     padding: 5px;
-    border-bottom: 2px solid  #222226;
+    border-bottom: 2px solid #222226;
 }
-input{
+
+input {
     font-size: 40px;
     padding: 5px;
     margin: 5px;
